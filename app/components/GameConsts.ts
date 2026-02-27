@@ -79,7 +79,7 @@ export interface Obstacle {
     y: number;
     w: number;
     h: number;
-    type: "BAR" | "CHAIRS" | "EQUIPMENT";
+    type: "BAR" | "CHAIRS" | "EQUIPMENT" | "WHISTLE_ZONE";
 }
 
 // Define some static obstacles on the deck
@@ -87,7 +87,8 @@ export const OBSTACLES: Obstacle[] = [
     { id: "bar_1", x: 350, y: 150, w: 100, h: 40, type: "BAR" },
     { id: "chairs_1", x: 200, y: 400, w: 60, h: 60, type: "CHAIRS" },
     { id: "chairs_2", x: 550, y: 350, w: 60, h: 60, type: "CHAIRS" },
-    { id: "equipment", x: CANVAS_WIDTH / 2 - 40, y: CANVAS_HEIGHT - 120, w: 80, h: 50, type: "EQUIPMENT" }
+    { id: "equipment", x: CANVAS_WIDTH / 2 - 40, y: CANVAS_HEIGHT - 120, w: 80, h: 50, type: "EQUIPMENT" },
+    { id: "whistle_zone", x: CANVAS_WIDTH - 200, y: 0, w: 200, h: 120, type: "WHISTLE_ZONE" }
 ];
 
 export const LEVELS: LevelConfig[] = [

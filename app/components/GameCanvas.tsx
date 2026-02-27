@@ -259,6 +259,7 @@ export default function GameCanvas() {
 
         // 3.5 Draw Obstacles
         OBSTACLES.forEach(obs => {
+            if (obs.type === "WHISTLE_ZONE") return; // Don't draw the whistle zone, it's just for collision
             // Shadow
             ctx.fillStyle = "rgba(0,0,0,0.3)";
             ctx.fillRect(obs.x + 5, obs.y + 5, obs.w, obs.h);
@@ -709,22 +710,6 @@ export default function GameCanvas() {
     const renderOverlay = () => {
         return (
             <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-10">
-                {/* Whistle Cooldown Bar (Playing State) */}
-                {screen === "PLAYING" && gameStateRef.current.upgrades.whistle > 0 && (
-                    <div className="absolute top-20 left-1/2 transform -translate-x-1/2 flex items-center gap-2 pointer-events-auto bg-slate-900/80 p-2 rounded border border-slate-700 shadow-lg">
-                        <span className="text-xl">📯</span>
-                        <div className="w-32 h-4 bg-slate-800 rounded relative overflow-hidden">
-                            <div
-                                className={`absolute top-0 left-0 h-full transition-all duration-300 ${whistleCd === 0 ? "bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]" : "bg-red-500"}`}
-                                style={{ width: whistleCd === 0 ? '100%' : `${((15 - whistleCd) / 15) * 100}%` }}
-                            ></div>
-                        </div>
-                        <span className="text-xs font-bold text-white uppercase w-32 text-center drop-shadow-md">
-                            {whistleCd === 0 ? "Space Để Thổi" : `${Math.ceil(whistleCd)}s`}
-                        </span>
-                    </div>
-                )}
-
                 {/* Primary Popup Overlay */}
                 {screen !== "PLAYING" && (
                     <div className="absolute inset-0 bg-black/70 flex items-center justify-center flex-col text-white z-20 p-8 text-center backdrop-blur-sm pointer-events-auto">
@@ -828,41 +813,42 @@ export default function GameCanvas() {
     };
 
     return (
-        <div className="flex flex-col items-center gap-4 w-full relative">
-            <div className="flex justify-between items-center w-full max-w-[800px] px-6 py-3 bg-slate-800 text-white rounded-xl shadow-lg border border-slate-700">
-                <div>
-                    <div className="text-sm opacity-70 uppercase tracking-wider font-bold">
-                        {screen === "PLAYING" ? `${levelName} (Level ${level})` : "Safe Voyage Dashboard"}
+        <div className="flex flex-col items-center gap-4 w-full relative p-2 md:p-4">
+            {/* Dashboard */}
+            <div className="flex flex-wrap md:flex-nowrap justify-between items-center w-full max-w-[800px] px-4 py-3 md:px-6 md:py-3 bg-slate-800 text-white rounded-xl shadow-lg border border-slate-700 gap-y-3">
+                <div className="w-1/2 md:w-auto">
+                    <div className="text-[10px] md:text-sm opacity-70 uppercase tracking-wider font-bold">
+                        {screen === "PLAYING" ? `${levelName} (Lvl ${level})` : "Safe Voyage"}
                     </div>
-                    <div className="text-2xl font-bold font-mono text-cyan-300">
+                    <div className="text-lg md:text-2xl font-bold font-mono text-cyan-300">
                         {screen === "PLAYING" ? <>Time: <span className="text-white">{Math.ceil(timeRemaining)}s</span></> : <span>--:--</span>}
                     </div>
                 </div>
 
-                <div className="text-center">
-                    <div className="text-sm opacity-70 uppercase tracking-wider font-bold">Kinh nghiệm</div>
-                    <div className={`text-xl font-bold font-mono ${score < 0 ? "text-red-400" : "text-green-400"}`}>
+                <div className="text-center w-1/4 md:w-auto">
+                    <div className="text-[10px] md:text-sm opacity-70 uppercase tracking-wider font-bold">Kinh nghiệm</div>
+                    <div className={`text-lg md:text-xl font-bold font-mono ${score < 0 ? "text-red-400" : "text-green-400"}`}>
                         {score}
                     </div>
                 </div>
 
-                <div className="text-center bg-yellow-900/30 px-4 py-1 rounded border border-yellow-700/50">
-                    <div className="text-xs opacity-70 uppercase tracking-wider font-bold text-yellow-400">Tiền Thưởng</div>
-                    <div className="text-2xl font-bold font-mono text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]">
+                <div className="text-center bg-yellow-900/30 px-2 py-1 md:px-4 md:py-1 rounded border border-yellow-700/50 w-1/4 md:w-auto">
+                    <div className="text-[10px] md:text-xs opacity-70 uppercase tracking-wider font-bold text-yellow-400">Thưởng</div>
+                    <div className="text-lg md:text-2xl font-bold font-mono text-yellow-400 drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]">
                         {coins} 🪙
                     </div>
                 </div>
 
-                <div className="text-right flex items-center gap-4">
+                <div className="text-right flex items-center justify-between md:justify-end w-full md:w-auto pt-2 border-t border-slate-700 md:border-none md:pt-0">
                     <div>
-                        <div className="text-sm opacity-70 uppercase tracking-wider font-bold text-red-300">Tai nạn</div>
-                        <div className="text-2xl font-bold font-mono text-red-500">
+                        <div className="text-[10px] md:text-sm opacity-70 uppercase tracking-wider font-bold text-red-300">Tai nạn</div>
+                        <div className="text-lg md:text-2xl font-bold font-mono text-red-500">
                             {screen === "PLAYING" ? `${accidents} / ${allowedAccidents}` : `- / -`}
                         </div>
                     </div>
                     <button
                         onClick={() => setIsMuted(audioSystem.toggleMute())}
-                        className="ml-4 p-3 bg-slate-700 hover:bg-slate-600 rounded-full cursor-pointer transition"
+                        className="ml-4 p-2 md:p-3 bg-slate-700 hover:bg-slate-600 rounded-full cursor-pointer transition w-10 h-10 md:w-12 md:h-12 flex items-center justify-center shrink-0"
                         title={isMuted ? "Unmute" : "Mute"}
                     >
                         {isMuted ? "🔇" : "🔈"}
@@ -870,15 +856,45 @@ export default function GameCanvas() {
                 </div>
             </div>
 
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700 bg-sky-900 border-t-sky-400 border-b-sky-950">
+            {/* Game Canvas */}
+            <div className="relative w-full max-w-[800px] rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-700 bg-sky-900 border-t-sky-400 border-b-sky-950 flex-shrink-0">
                 <canvas
                     ref={canvasRef}
                     width={CANVAS_WIDTH}
                     height={CANVAS_HEIGHT}
                     onPointerDown={handlePointerDown}
-                    className={`block ${screen === "PLAYING" ? "cursor-crosshair" : ""}`}
+                    className={`block w-full h-auto aspect-[4/3] object-contain ${screen === "PLAYING" ? "cursor-crosshair" : ""}`}
                     style={{ filter: screen !== "PLAYING" || !!activeDialog ? "blur(4px) brightness(0.6)" : "none", transition: "filter 0.5s ease" }}
                 />
+
+                {/* Whistle Tool Overlay placed top-right to avoid taking external space */}
+                {screen === "PLAYING" && gameStateRef.current.upgrades.whistle > 0 && (
+                    <div
+                        className="absolute top-2 right-2 md:top-4 md:right-4 z-20 flex flex-col items-center gap-1 bg-slate-900/80 p-2 md:p-3 rounded-xl border border-slate-600 shadow-xl cursor-pointer hover:bg-slate-800 active:scale-95 transition pointer-events-auto backdrop-blur-sm"
+                        onPointerDown={(e) => {
+                            e.stopPropagation();
+                            // Trigger whistle logic manually here
+                            const state = gameStateRef.current;
+                            if (state.useWhistle()) {
+                                audioSystem.playSuccessChime();
+                            }
+                        }}
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl drop-shadow-md">📯</span>
+                            <div className="w-16 h-3 bg-slate-800 rounded-full relative overflow-hidden border border-slate-600">
+                                <div
+                                    className={`absolute top-0 left-0 h-full transition-all duration-300 ${whistleCd === 0 ? "bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.8)]" : "bg-red-500"}`}
+                                    style={{ width: whistleCd === 0 ? '100%' : `${((15 - whistleCd) / 15) * 100}%` }}
+                                ></div>
+                            </div>
+                        </div>
+                        <span className="text-[10px] md:text-xs font-bold text-white uppercase text-center drop-shadow-md tracking-wider">
+                            {whistleCd === 0 ? "THỔI (SPACE)" : `${Math.ceil(whistleCd)}s COOLDOWN`}
+                        </span>
+                    </div>
+                )}
+
                 {renderOverlay()}
                 {renderDialog()}
             </div>
