@@ -683,8 +683,8 @@ export default function GameCanvas() {
                                     {activeDialog.dialogData.actionName}
                                 </span>
                             </ModalHeader>
-                            <ModalBody className="p-6 overflow-hidden">
-                                <img src="/safe_voyage/dialog.png" alt="Dialogue BG" className="absolute top-0 left-0 w-full h-full object-cover opacity-20 pointer-events-none" />
+                            <ModalBody className="p-6 overflow-hidden relative">
+                                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/50 via-slate-800/10 to-slate-900/50 pointer-events-none" />
                                 <div className="relative z-10 flex flex-col h-full justify-between">
                                     <h2 className="text-xl font-bold mb-4 bg-slate-800/80 p-3 rounded">{activeDialog?.dialogData.excuse}</h2>
                                     <div className="flex flex-col gap-3">
