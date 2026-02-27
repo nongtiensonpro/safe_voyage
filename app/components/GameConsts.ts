@@ -68,8 +68,27 @@ export interface LevelConfig {
     durationSeconds: number;
     hazardSpawnRateMultiplier: number;
     allowedAccidents: number;
-    rockingModifier?: number;
+    rockingModifier?: number; // 0 = none, 1 = moderate, 2 = severe
+    isNight?: boolean;        // Enables global illumination mask (Darkness)
+    isParty?: boolean;        // High lighting/Firework effect for final level
 }
+
+export interface Obstacle {
+    id: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    type: "BAR" | "CHAIRS" | "EQUIPMENT";
+}
+
+// Define some static obstacles on the deck
+export const OBSTACLES: Obstacle[] = [
+    { id: "bar_1", x: 350, y: 150, w: 100, h: 40, type: "BAR" },
+    { id: "chairs_1", x: 200, y: 400, w: 60, h: 60, type: "CHAIRS" },
+    { id: "chairs_2", x: 550, y: 350, w: 60, h: 60, type: "CHAIRS" },
+    { id: "equipment", x: CANVAS_WIDTH / 2 - 40, y: CANVAS_HEIGHT - 120, w: 80, h: 50, type: "EQUIPMENT" }
+];
 
 export const LEVELS: LevelConfig[] = [
     {
@@ -113,6 +132,35 @@ export const LEVELS: LevelConfig[] = [
         hazardSpawnRateMultiplier: 2.5,
         allowedAccidents: 1,
         rockingModifier: 2,
+    },
+    {
+        level: 6,
+        name: "Đêm Tối Trên Biển",
+        npcCount: 20,
+        durationSeconds: 120,
+        hazardSpawnRateMultiplier: 2.0,
+        allowedAccidents: 3,
+        isNight: true,
+    },
+    {
+        level: 7,
+        name: "Bão Đêm Đoạt Mạng",
+        npcCount: 28,
+        durationSeconds: 150,
+        hazardSpawnRateMultiplier: 2.8,
+        allowedAccidents: 2,
+        rockingModifier: 2,
+        isNight: true,
+    },
+    {
+        level: 8,
+        name: "Giao Thừa (Boss Màn Cuối)",
+        npcCount: 40,
+        durationSeconds: 180,
+        hazardSpawnRateMultiplier: 3.5,
+        allowedAccidents: 1,
+        isNight: true,
+        isParty: true,
     },
 ];
 
@@ -220,3 +268,39 @@ export const BEHAVIORS: Record<BehaviorType, BehaviorConfig> = {
         ]
     }
 };
+
+export interface UpgradeConfig {
+    id: "speed" | "whistle" | "radar";
+    name: string;
+    description: string;
+    icon: string;
+    maxLevel: number;
+    costs: number[];
+}
+
+export const UPGRADE_STORE: UpgradeConfig[] = [
+    {
+        id: "speed",
+        name: "Giày Thể Thao",
+        description: "Tăng 20% tốc độ chạy mỗi cấp.",
+        icon: "👟",
+        maxLevel: 3,
+        costs: [100, 250, 500] // Level 1 is 100, Level 2 is 250, Level 3 is 500
+    },
+    {
+        id: "whistle",
+        name: "Còi Khẩn Cấp",
+        description: "Cấp 1: Thổi còi đứng hình NPC trong 2s. Cấp 2: Đứng hình 4s. (Có Cooldown)",
+        icon: "哨", // Whistle emoji substitute since 哨 is Chinese char, better use 📯 or 哨
+        maxLevel: 2,
+        costs: [300, 600]
+    },
+    {
+        id: "radar",
+        name: "Bản Đồ Radar",
+        description: "Phát hiện ngay những điểm nóng nguy hiểm, cực kỳ hữu dụng trong sương mù/đêm tối.",
+        icon: "📡",
+        maxLevel: 1,
+        costs: [400]
+    }
+];

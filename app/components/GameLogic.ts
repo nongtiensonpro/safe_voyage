@@ -1,6 +1,7 @@
 import {
     CANVAS_WIDTH, CANVAS_HEIGHT, CONSTANTS, SCORES, HazardState,
-    NPCType, BehaviorType, BEHAVIORS, LEVELS, DialogData, DialogOption
+    NPCType, BehaviorType, BEHAVIORS, LEVELS, DialogData, DialogOption,
+    OBSTACLES, Obstacle
 } from "./GameConsts";
 
 export interface Vector2D {
@@ -19,6 +20,7 @@ export class Player implements Vector2D {
     radius: number = 15;
     speed: number = CONSTANTS.PLAYER_SPEED;
     target: Vector2D | null = null;
+    facing: number = 0; // Angle in radians
 }
 
 export class NPC implements Vector2D {
@@ -35,10 +37,12 @@ export class NPC implements Vector2D {
     // Timer states
     stateTimer: number = 0;
     maxStateTimer: number = 0;
+    stunTimer: number = 0;
 
     // Movement
     target: Vector2D | null = null;
     speed: number = 50;
+    facing: number = 0; // Angle in radians
 
     constructor(id: number) {
         this.id = id;
@@ -127,12 +131,43 @@ export class NPC implements Vector2D {
     }
 }
 
-export type GameScreenState = "START" | "PLAYING" | "LEVEL_COMPLETE" | "GAME_OVER" | "VICTORY";
+export type GameScreenState = "START" | "PLAYING" | "LEVEL_COMPLETE" | "SHOP" | "GAME_OVER" | "VICTORY";
 
 export class GameState {
     screen: GameScreenState = "START";
     score: number = 0;
+    coins: number = 0; // The persistent currency
     accidents: number = 0;
+
+    // Skill Tree Upgrades
+    upgrades = {
+        speed: 0,       // Movement speed/dash multiplier
+        whistle: 0,     // Stun duration/unlocked
+        radar: 0        // Map visibility
+    };
+
+    whistleCooldown: number = 0;
+
+    public useWhistle() {
+        if (this.upgrades.whistle === 0) return false;
+        if (this.whistleCooldown > 0) return false;
+
+        const stunDurationSeconds = this.upgrades.whistle === 1 ? 2.0 : 4.0;
+
+        let stunnedAny = false;
+        this.npcs.forEach(npc => {
+            if (npc.state !== "SAFE" && npc.state !== "ACCIDENT") {
+                npc.stunTimer = stunDurationSeconds; // Stun lasts in seconds
+                stunnedAny = true;
+            }
+        });
+
+        if (stunnedAny) {
+            this.whistleCooldown = 15.0; // 15 seconds cooldown
+            return true;
+        }
+        return false;
+    }
 
     currentLevelIndex: number = 0;
     levelTimer: number = 0;
@@ -143,6 +178,44 @@ export class GameState {
     npcs: NPC[] = [];
 
     activeDialog: ActiveDialog | null = null;
+
+    constructor() {
+        this.loadProgress();
+
+        if (typeof window !== "undefined") {
+            (window as any).__gameState = this;
+        }
+    }
+
+    public saveProgress() {
+        if (typeof window !== "undefined") {
+            const data = {
+                currentLevelIndex: this.currentLevelIndex,
+                score: this.score,
+                coins: this.coins,
+                upgrades: this.upgrades
+            };
+            localStorage.setItem("safeVoyageProgress", JSON.stringify(data));
+        }
+    }
+
+    public loadProgress() {
+        if (typeof window !== "undefined") {
+            const saved = localStorage.getItem("safeVoyageProgress");
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    // Don't auto-load level if it was game over, we handle new game start separately.
+                    this.score = data.score || 0;
+                    this.coins = data.coins || 0;
+                    if (data.upgrades) this.upgrades = data.upgrades;
+                    // Optional: could restore level progress if wanted
+                } catch (e) {
+                    console.error("Failed to load progress", e);
+                }
+            }
+        }
+    }
 
     public startLevel(index: number) {
         this.currentLevelIndex = index;
@@ -158,8 +231,11 @@ export class GameState {
         this.levelTimer = 0;
         this.maxLevelTimer = config.durationSeconds;
         this.activeDialog = null;
+        this.whistleCooldown = 0;
 
         this.player = new Player();
+        // Apply Speed Upgrade
+        this.player.speed = CONSTANTS.PLAYER_SPEED * (1 + 0.2 * this.upgrades.speed);
 
         this.npcs = [];
         for (let i = 0; i < config.npcCount; i++) {
@@ -178,6 +254,15 @@ export class GameState {
 
         if (this.levelTimer >= this.maxLevelTimer) {
             this.screen = "LEVEL_COMPLETE";
+
+            // Calculate coined earned this level (Base + 10% of Score + Bonus for no accidents)
+            const baseCoins = 50;
+            const scoreCoins = Math.max(0, Math.floor(this.score * 0.1));
+            const perfectBonus = this.accidents === 0 ? 100 : 0;
+
+            this.coins += (baseCoins + scoreCoins + perfectBonus);
+            this.saveProgress();
+
             return;
         }
 
@@ -188,7 +273,17 @@ export class GameState {
 
         this.updateMovement(this.player, dt, 0, 0);
 
+        if (this.whistleCooldown > 0) {
+            this.whistleCooldown = Math.max(0, this.whistleCooldown - dt);
+        }
+
         this.npcs.forEach(npc => {
+            if (npc.stunTimer > 0) {
+                npc.stunTimer -= dt;
+                // Stunned NPCs stand still and their danger timer doesn't drop
+                return;
+            }
+
             if (npc.target) {
                 const arrived = this.updateMovement(npc, dt, rockingModifier, this.totalTime);
                 if (arrived) {
@@ -229,15 +324,37 @@ export class GameState {
         });
     }
 
-    private updateMovement(entity: { x: number, y: number, speed: number, target: Vector2D | null }, dt: number, rockingModifier: number, totalTime: number): boolean {
+    // Helper: Circle vs Rectangle collision
+    private checkCollision(cx: number, cy: number, radius: number): boolean {
+        for (const obs of OBSTACLES) {
+            // Find the closest point to the circle within the rectangle
+            const testX = Math.max(obs.x, Math.min(cx, obs.x + obs.w));
+            const testY = Math.max(obs.y, Math.min(cy, obs.y + obs.h));
+
+            // Calculate distance from closest point to circle center
+            const distX = cx - testX;
+            const distY = cy - testY;
+            const distance = Math.sqrt(distX * distX + distY * distY);
+
+            if (distance < radius) {
+                return true; // Collision detected
+            }
+        }
+        return false;
+    }
+
+    private updateMovement(entity: { x: number, y: number, speed: number, target: Vector2D | null, radius?: number }, dt: number, rockingModifier: number, totalTime: number): boolean {
         if (rockingModifier > 0 && "state" in entity) {
             // Only drift NPCs, not player
             const npc = entity as any;
             if (npc.state === "SAFE") {
                 const driftPower = rockingModifier * 30;
-                entity.y += Math.sin(totalTime * 2) * driftPower * dt;
+                const newY = entity.y + Math.sin(totalTime * 2) * driftPower * dt;
 
-                // Keep in bounds
+                // Drift bounds & collision
+                if (!this.checkCollision(entity.x, newY, entity.radius || 15)) {
+                    entity.y = newY;
+                }
                 entity.y = Math.max(70, Math.min(entity.y, CANVAS_HEIGHT - 70));
             }
         }
@@ -246,20 +363,47 @@ export class GameState {
 
         const dx = entity.target.x - entity.x;
         const dy = entity.target.y - entity.y;
+
+        // Update facing direction if moving
+        if (dx !== 0 || dy !== 0) {
+            (entity as any).facing = Math.atan2(dy, dx);
+        }
+
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist > 5) {
-            const moveDist = entity.speed * dt;
-            if (moveDist >= dist) {
-                entity.x = entity.target.x;
-                entity.y = entity.target.y;
+            const moveDist = Math.min(entity.speed * dt, dist);
+            const moveX = (dx / dist) * moveDist;
+            const moveY = (dy / dist) * moveDist;
+            const radius = entity.radius || 15; // default radius
+
+            // Try moving both axes
+            if (!this.checkCollision(entity.x + moveX, entity.y + moveY, radius)) {
+                entity.x += moveX;
+                entity.y += moveY;
+            } else if (!this.checkCollision(entity.x + moveX, entity.y, radius)) {
+                // Slide horizontally
+                entity.x += moveX;
+            } else if (!this.checkCollision(entity.x, entity.y + moveY, radius)) {
+                // Slide vertically
+                entity.y += moveY;
+            } else {
+                // Stuck
+                if ("state" in entity) {
+                    // It's an NPC, pick a new target if stuck for a bit
+                    // For simply, just clear target and let loop handle it
+                    entity.target = null;
+                    return true;
+                }
+            }
+
+            // Check if arrived after move
+            const newDist = Math.sqrt(Math.pow(entity.target.x - entity.x, 2) + Math.pow(entity.target.y - entity.y, 2));
+            if (newDist <= 5) {
                 entity.target = null;
                 return true;
-            } else {
-                entity.x += (dx / dist) * moveDist;
-                entity.y += (dy / dist) * moveDist;
-                return false;
             }
+            return false;
         } else {
             entity.target = null;
             return true;

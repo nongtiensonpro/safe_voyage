@@ -346,17 +346,17 @@ Game phải luôn giữ **tông vui tươi, hài hước** — không được n
 
 ---
 
-## 10. ROADMAP
+## 10. ROADMAP (MỞ RỘNG)
+
+_Dự án đã hoàn thành Phase 0 đến Phase 5 (Core MVP). Dưới đây là Roadmap cho giai đoạn mở rộng "Gameplay 2.0"._
 
 | Giai đoạn | Thời gian ước tính | Deliverable |
 |---|---|---|
-| **Phase 0** | 1 tuần | GDD hoàn chỉnh + Prototype ý tưởng |
-| **Phase 1** | 2-3 tuần | MVP chạy được (3 màn, gameplay cơ bản) |
-| **Phase 2** | 2-3 tuần | Thêm dialogue system + 5 loại khách |
-| **Phase 3** | 2 tuần | Đồ họa hoàn chỉnh + âm thanh |
-| **Phase 4** | 1-2 tuần | Test + cân bằng độ khó |
-| **Phase 5** | 1 tuần | Xuất bản (web/itch.io) |
+| **Phase 6** | 1-2 tuần | **Advanced Graphics:** Nâng cấp đồ họa Canvas. Chuyển từ Emojis sang đồ họa có Animation/Path. Thêm chướng ngại vật (vật thể tĩnh) trên mặt boong khiến NPC và Player phải tìm đường tránh né. |
+| **Phase 7** | 1-2 tuần | **Economy & Safe-mart:** Xây dựng hệ thống nâng cấp Kỹ năng (Skill Tree - GDD 6.2). Chuyển đổi Điểm (Score) thành Tiền tệ. Xây dựng giao diện "Cửa hàng" giữa các Level để mua Tốc độ, Còi, Mini-map. |
+| **Phase 8** | 1-2 tuần | **Advanced Levels & Lighting:** Áp dụng hệ thống Ánh sáng động (Dynamic Lighting). Phát triển Level 6 (Đêm tối mù sương), Level 7 (Biển Động Đêm Bão), Level 8 (Đêm Giao Thừa Cực Khó). |
+| **Phase 9** | 1 tuần | **Final Boss & Polish 2.0:** Hoàn thiện trải nghiệm, tối ưu FPS khi số lượng Particle và Lighting tăng cao. |
 
 ---
 
-*Tài liệu này là phiên bản 1.0 — có thể điều chỉnh trong quá trình phát triển.*
+*Tài liệu này là phiên bản 1.1 — Liên tục cập nhật theo tiến trình Vibe Coding.*
