@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { CANVAS_WIDTH, CANVAS_HEIGHT, COLORS, CONSTANTS, LEVELS, DialogOption, NPC_EMOJIS } from "./GameConsts";
 import { GameState, ActiveDialog } from "./GameLogic";
 import { audioSystem } from "./AudioSystem";
+import { Modal, ModalContent, ModalHeader, ModalBody } from "@heroui/modal";
+import { Button } from "@heroui/button";
 
 // Particle system interface
 interface Particle {
@@ -391,41 +393,48 @@ export default function GameCanvas() {
         const npc = state.npcs.find(n => n.id === activeDialog.npcId);
         if (!npc) return null;
 
-        const buttonStyle = "w-full text-left bg-slate-700 hover:bg-slate-600 p-3 rounded-lg border border-slate-600 transition my-1 cursor-pointer";
-
-        let left = npc.x + 20;
-        let top = npc.y - 150;
-        if (left > CANVAS_WIDTH - 300) left = npc.x - 320;
-        if (top < 20) top = 20;
-
         return (
-            <div
-                className="absolute bg-slate-800 text-white p-5 rounded-2xl shadow-2xl border-2 border-blue-400 w-[300px] z-20 flex flex-col gap-3"
-                style={{ left, top }}
+            <Modal
+                isOpen={!!activeDialog}
+                onOpenChange={() => { }} // User must make a choice to close
+                hideCloseButton={true}
+                isDismissable={false}
+                placement="center"
+                classNames={{
+                    base: "bg-slate-800 border-2 border-blue-400 text-white shadow-2xl",
+                }}
             >
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">⚠️</span>
-                    <span className="font-bold text-yellow-500 uppercase text-xs tracking-wider">{activeDialog.dialogData.actionName}</span>
-                </div>
-
-                <div className="bg-slate-900 p-3 rounded-xl border border-slate-700 italic relative mb-2">
-                    <div className="absolute -left-2 top-3 w-4 h-4 bg-slate-900 border-l border-b border-slate-700 transform rotate-45"></div>
-                    &quot;{activeDialog.dialogData.excuse}&quot;
-                </div>
-
-                <div className="flex flex-col gap-1">
-                    <p className="text-xs text-slate-400 mb-1">Chọn cách thuyết phục hợp lý (Click):</p>
-                    {activeDialog.dialogData.options.map((opt, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => handleDialogSelect(opt)}
-                            className={buttonStyle}
-                        >
-                            {opt.text}
-                        </button>
-                    ))}
-                </div>
-            </div>
+                <ModalContent>
+                    {() => (
+                        <>
+                            <ModalHeader className="flex items-center gap-2 pb-0">
+                                <span className="text-2xl">⚠️</span>
+                                <span className="font-bold text-yellow-500 uppercase tracking-wider text-sm flex-1 break-words">
+                                    {activeDialog.dialogData.actionName}
+                                </span>
+                            </ModalHeader>
+                            <ModalBody className="pb-6">
+                                <div className="bg-slate-900 p-4 rounded-xl border border-slate-700 italic relative mb-4 mt-2">
+                                    &quot;{activeDialog.dialogData.excuse}&quot;
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-xs text-slate-400 mb-2">Chọn cách thuyết phục hợp lý (Click):</p>
+                                    {activeDialog.dialogData.options.map((opt, idx) => (
+                                        <Button
+                                            key={idx}
+                                            variant="flat"
+                                            className="w-full text-left justify-start h-auto py-3 bg-slate-700 hover:bg-slate-600 text-white border border-slate-600 transition truncate whitespace-normal"
+                                            onClick={() => handleDialogSelect(opt)}
+                                        >
+                                            <span className="break-words">{opt.text}</span>
+                                        </Button>
+                                    ))}
+                                </div>
+                            </ModalBody>
+                        </>
+                    )}
+                </ModalContent>
+            </Modal>
         );
     };
 
