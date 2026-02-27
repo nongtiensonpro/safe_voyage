@@ -1,9 +1,9 @@
 name: Deploy Next.js site to Pages
 
 on:
-  # Chạy khi push lên nhánh main
+  # Chạy khi push lên nhánh master
   push:
-    branches: ["main"]
+    branches: ["master"]
   # Cho phép kích hoạt thủ công từ tab Actions
   workflow_dispatch:
 
